@@ -191,6 +191,7 @@ int main(int argc, char const *argv[]) {
 
     /// calculate similarity score
 
+    infile.close();
     cout << "CMOS Project" << endl;
     return 0;
     return 0;
