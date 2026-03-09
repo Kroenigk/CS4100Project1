@@ -132,12 +132,12 @@ double findSimilarity(const vector<Fingerprint>& a, const vector<Fingerprint>& b
     unordered_set<unsigned long long> setB;
     int shared_count = 0;
 
-    for(int i = 0; i < a.size(); ++i)
+    for(long unsigned int i = 0; i < a.size(); ++i)
     {
         setA.insert(a[i].minimum_hash);
     }
 
-    for(int i = 0; i < b.size(); ++i)
+    for(long unsigned int i = 0; i < b.size(); ++i)
     {
         setB.insert(b[i].minimum_hash);
     }
@@ -188,7 +188,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     int n = files.size();
 
     ///print out all ranked scores for a file in a table format into an output file
-    cout << setw(300)<< setfill('-') << "" << endl;
+    cout << setw(550)<< setfill('-') << "" << endl;
     cout << setfill(' ');
 
     ///table header
@@ -215,7 +215,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
         }
         cout << endl;
     }
-    cout << setw(300)<< setfill('-') << "" << endl;
+    cout << setw(550)<< setfill('-') << "" << endl;
 
 }
 
@@ -257,12 +257,6 @@ int main() {
 
         ///Find and store all fingerprints for a file
         file.fingerprints = winnowingAlgorithm(file.k_mers_hashes, w);
-
-        cout << "File " << file.fileID
-     << " tokens: " << file.tokens.size()
-     << ", k-gram hashes: " << file.k_mers_hashes.size()
-     << ", fingerprints: " << file.fingerprints.size()
-     << endl;
 
         ///Add file data to our tracking vector
         files.push_back(file);

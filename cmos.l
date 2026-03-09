@@ -78,14 +78,31 @@ int checkKeyword(const char* word){
 }
 %}
 
+%x	COMMENT
+
 %%
+
 \n+       {   Addline(yytext);    }
 
-[ \t\f]+		{	/* ignore */	}
+[ \t\f\r]+		{	/* ignore */	}
 
-"//".*			{	/* ignore */	}
+"//"[^\n\r]*	{	/* ignore */	}
 
-"/*"([^*]|\*+[^*/])*\*+\/ 		{	/* ignore */	}
+"/*"		{	BEGIN(COMMENT);		}
+
+<COMMENT>"*/"	{	BEGIN(INITIAL);	}
+
+<COMMENT>\n		{	Addline(yytext);	}
+
+<COMMENT>\r		{	/* ignore */	}
+
+<COMMENT>.		{	/* ignore */		}
+
+
+\*[A-Za-z_][A-Za-z0-9_]*		{	
+									fprintf(out, "%d ", TKPOINTER);
+									return TKPOINTER;	
+								}
 
 "++"|"--"|"<="|">="|"||"|"&&"|"=="|"!="|">>"|"<<"|"::"|"->"|"+="|"*="|"-="|"/="|"%="		{	fprintf(out, "%d ", TKOPERATOR); return TKOPERATOR;	}
 
@@ -98,11 +115,6 @@ int checkKeyword(const char* word){
 							fprintf(out, "%d ", TKPUNC);
 							return TKPUNC;		
 						}
-
-\*[A-Za-z_][A-Za-z0-9_]*		{	
-									fprintf(out, "%d ", TKPOINTER);
-									return TKPOINTER;	
-								}
 
 [a-zA-Z_][a-zA-Z0-9_]*	{	
 							int token = checkKeyword(yytext);
@@ -125,11 +137,13 @@ int checkKeyword(const char* word){
 								return TKCHAR; 		
 							}
 
-\#[^\n]*     { /* ignore */ }
+\#[^\n\r]*     {		/* ignore */ 	}
+
+[$@\\']			{	/* ignore stray symbols in bad source code or comments */		}
 
 .				{   
-					fprintf(out, "%d ", TKUNMATCHED);
-					return TKUNMATCHED;   
+    				fprintf(out, "%d ", TKUNMATCHED);
+    				return TKUNMATCHED;   
 				}
 
 %%
