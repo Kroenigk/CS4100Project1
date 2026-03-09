@@ -1,198 +1,269 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
-#include <algorithm>
+#include <string>
+#include <unordered_set>
+#include <iomanip>
 
 using namespace std;
 
-const int MAXLOC = 150;
-
-class KmerHash {
-private:
-    //table size
-    int size;
-    string* hashTable;
-    // locations 
-    int** locs;
-    // number of locations
-    int* locNum;
-    // number of unique kmers
-    int unique;
-public:
-    KmerHash(int s) {
-        size = s;
-        unique = 0;
-        hashTable = new string[size];
-        locs = new int*[size];
-        for (int i = 0; i < size; i++) locs[i] = new int[MAXLOC];
-        locNum = new int[size];        
-    }
-    /**
-     * @brief hashes a string and returns index
-     * 
-     * @param key - string to hash
-     * @return int - index
-     */
-    int hash(const string& key) {
-        int h = 0;
-        for (size_t i = 0; i < key.length(); i++) h += key[i];
-        int index = h % size;
-        return index;        
-    }
-    /**
-     * @brief insert new k-mer
-     * 
-     * @param kmer - kmer to insert
-     * @param pos - position in string
-     */
-    void insert(const string& kmer, int pos) {
-        int index = hash(kmer);
-        while (!hashTable[index].empty() && hashTable[index] != kmer) {
-            index = (index + 1) % size;
-        }
-        if (hashTable[index] == kmer) {
-            // put kmer into hashtable, is max locations hasnt been reached
-            // MAY HAVE TO ADJUST MAXLOC
-            if (locNum[index] < MAXLOC) {
-                int x = locNum[index];
-                locs[index][x] = pos;
-                locNum[index]++;
-            } else {
-                printf("Max Locations reached for K-Mer %s\n", kmer);
-            }
-        } else {
-            hashTable[index] = kmer;
-            locs[index][0] = pos;
-            locNum[index] = 1;
-            unique++;
-        }
-        // check for occupied percent, rehash if over 50%
-        float occupied = 1.0 * unique / size;
-        if (occupied > 0.5) {
-            rehash();
-        }   
-    }
-    /**
-     * @brief rehashes table
-     * 
-     */
-    void rehash() {
-        int oldSize = size;
-        string* oldHashTable = hashTable;
-        int** oldLocs = locs;
-        int* oldlocNum = locNum;
-
-        size *= 2;
-        unique = 0;
-        hashTable = new string[size];
-        locs = new int*[size];
-        for (int i = 0; i < size; i++) locs[i] = new int[MAXLOC];
-        locNum = new int[size];
-
-        for (int i = 0; i < oldSize; i++) {
-            if (!oldHashTable[i].empty()) {
-                for (int j = 0; j < oldlocNum[i]; j++) {
-                    insert(oldHashTable[i], oldLocs[i][j]);
-                }                
-            }            
-        }
-        for (int i = 0; i < oldSize; i++) delete[] oldLocs[i];
-        delete[] oldLocs;
-        delete[] oldHashTable;
-        delete[] oldlocNum;                
-        
-    }
-    ~KmerHash() {
-        for (int i = 0; i < size; i++) delete[] locs[i];
-        delete[] locs;
-        delete[] hashTable;
-        delete[] locNum;
-    }
-    vector<int> locOfKmer(const string& kmer) {
-        vector<int> v_locs;
-        int index = hash(kmer);
-        while (!hashTable[index].empty() && hashTable[index] != kmer) {
-            index = (index + 1) % size;
-        }
-        if(hashTable[index] == kmer) {
-            for (int i = 0; i < locNum[index]; i++) {
-                v_locs.push_back(locs[index][i]);
-            }   
-        }
-        return v_locs;        
-    }
-    void remove(const string& kmer, string& tokens, int k) {
-        int index = hash(kmer);
-        bool found = false;
-
-        while (!hashTable[index].empty() && hashTable[index] != kmer) {
-            index = (index + 1) % size;
-        }
-        if (hashTable[index] == kmer) {
-            found = true;
-            int count = locNum[index];
-            vector<int> positions(locs[index], locs[index] + count);
-            sort(positions.rbegin(), positions.rend());
-
-            for (int pos : positions) {
-                if (pos + kmer.length() <= tokens.length()) {
-                    tokens.erase(pos, kmer.length());
-                }                
-            }            
-        }    
-    }
+struct KGramHash {
+    unsigned long long hash;
+    int position;
 };
 
-KmerHash::KmerHash(/* args */)
+struct Fingerprint {
+    unsigned long long minimum_hash;
+    int position;
+};
+
+struct FileData {
+    int fileID;
+    vector<int> tokens;
+    vector<KGramHash> k_mers_hashes;
+    vector<Fingerprint> fingerprints;
+};
+
+struct Score {
+    int fileID;
+    double similarityScore;
+    int comparisonFile;
+};
+
+/// @brief This function will read in all of the tokens for a text file and place them in a vector for future use
+/// @param fileTokens This string is all of the tokens from a file on one line from tokens.txt
+/// @param fileID Currently this is an int that represents the file from the directory since file names may repeat
+/// @return A vector of the tokens from a file
+vector<int> readInTokens(string fileTokens)
 {
+    vector<int> tokens;
+    stringstream fileLine(fileTokens);
+    int token;
+
+    while(fileLine >> token)
+    {
+        tokens.push_back(token);
+    }
+
+    return tokens;
 }
 
-KmerHash::~KmerHash()
+/// @brief Using a vector of tokens, it will hash all of the tokens into one k-mer hash 
+/// @param tokens Vector of int file tokens
+/// @param k Size of the overlapping k-mers, currently 4
+/// @return A vector of hashes for the k-mers
+vector<KGramHash> hashKMers(const vector<int>& tokens, int k)
 {
+    vector<KGramHash> hashes;
+    const unsigned long long hashBase = 31;
+
+    ///quick sanity check to make sure tokens and k are appropiate sizes. 
+    if ((int)tokens.size() < k || k <= 0) {
+        return hashes;
+    }
+
+    for(int i = 0; i <= (int)tokens.size() - k; i++)
+    {
+        unsigned long long hash = 0;
+        ///This will hash the k-mers
+        for(int j = 0; j < k; ++j)
+        {
+            hash = hashBase * hash + tokens[i+j];
+        }
+        hashes.push_back({hash, i});
+    }
+
+    return hashes;
+}
+
+/// @brief This function will perform the winnowing algorithm on the k-mer hashes
+/// @param hashes This contains all of the hashes for the tokens of a certain file
+/// @param w This is the set window size, currently it is set at 4
+/// @return Unsing the winnowing algorthim it will return a vector of the unique fingerprints for the overlapping windows of a file
+vector<Fingerprint> winnowingAlgorithm(const vector<KGramHash>& hashes, int w)
+{
+    vector<Fingerprint> fingerprints;
+
+    ///quick sanity check to make sure hashes and w are appropiate sizes for winnowing 
+    if ((int)hashes.size() < w || w <= 0) {
+        return fingerprints;
+    }
+
+    /// This loop will find all the unique fingerprint among the overlapping windows
+    int last_index = -1;
+    for(int i = 0; i <= (int)hashes.size() - w; i++)
+    {
+        ///Track the smallest hash found and its position
+        unsigned long long smallest = hashes[i].hash;
+        int smallest_index = i;
+        ///this will find the smallest has in a window
+        for(int j = 0; j < w; ++j)
+        {
+            ///This will check to see if a hash is smaller or equal to the current smallest which may be the starting index
+            if(hashes[i + j].hash < smallest || (hashes[i + j].hash == smallest && (i + j) > smallest_index))
+            {
+                smallest = hashes[i+j].hash;
+                smallest_index = i + j;
+            }
+        }
+        ///if the new fingerprint is not the same as the last add it
+        if(smallest_index != last_index)
+        {
+            fingerprints.push_back({smallest, hashes[smallest_index].position});
+            last_index = smallest_index;
+        }
+    }
+
+    return fingerprints;
+}
+
+/// @brief This function will find the similarity score between two file fingerprints
+/// @param a File a's vectors of fingerprints
+/// @param b File b's vectors of fingerprints
+/// @return A double representing the percent of similarity 
+double findSimilarity(const vector<Fingerprint>& a, const vector<Fingerprint>& b)
+{
+    unordered_set<unsigned long long> setA;
+    unordered_set<unsigned long long> setB;
+    int shared_count = 0;
+
+    for(int i = 0; i < a.size(); ++i)
+    {
+        setA.insert(a[i].minimum_hash);
+    }
+
+    for(int i = 0; i < b.size(); ++i)
+    {
+        setB.insert(b[i].minimum_hash);
+    }
+
+    ///Find the shared fingerprints - Intersection of the two sets
+    for(const auto& hash : setA){
+        if(setB.count(hash))
+        {
+            shared_count++;
+        }
+    }
+
+    ///find total unique fingerprints - Union of the two sets
+    int union_count = setA.size() + setB.size() - shared_count;
+    if(union_count == 0)
+    {
+        return 0.0;
+    }
+    double similarity = (static_cast<double>(shared_count) / union_count) * 100.0;
+
+    return similarity;
+}
+
+vector<vector<Score>> similarityTable(const vector<FileData>& files){
+    int n = files.size();
+    vector<vector<Score>> scores(n, vector<Score>(n));
+
+    ///initialize score values
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            scores[i][j] = {i, -1.0, j};
+        }
+    }
+    for(int i = 0; i < n; i++)
+    {
+        for(int j = i + 1; j < n; j++)
+        {
+            double similarityScore = findSimilarity(files[i].fingerprints, files[j].fingerprints);
+            scores[i][j] = {i, similarityScore, j};
+            scores[j][i] = {j, similarityScore, i};
+        }
+    }
+    return scores;
+}
+
+void printReport(const vector<FileData>& files, const vector<vector<Score>>& similarityScores)
+{
+    int n = files.size();
+
+    ///print out all ranked scores for a file in a table format into an output file
+    cout << setw(100)<< setfill('-') << "" << endl;
+    cout << setfill(' ');
+
+    ///table header
+    cout << setw(10) << "";
+    for(int i = 0; i < n; i++)
+    {
+        cout << setw(10) << files[i].fileID;
+    }
+    cout << endl;
+
+    ///print out each Similarity scores for the files
+    for(int i = 0; i < n; i++)
+    {
+        cout << setw(10) << files[i].fileID;
+        for (int j = 0; j < n; j++) {
+
+            if( i == j )
+            {
+                cout << setw(10) << "--";
+            }
+            else {
+                cout << setw(10) << fixed << setprecision(2) << similarityScores[i][j].similarityScore;
+            }
+        }
+        cout << endl;
+    }
+    cout << setw(100)<< setfill('-') << "" << endl;
+
 }
 
 
 int main(int argc, char const *argv[]) {
-    /// Open file
-    ifstream infile;
-    ///read in file info and remove white space so it is one line of characters
-    if(argc > 1) {
-        infile.open(argv[1]);
-    } else {
-        string tmp;
-        printf("Please input filename: ");
-        getline(cin, tmp);
-        infile.open(tmp);
-    }
-    if (infile.fail()) {
-        cerr << "Failed to open file\n";
+    /// Open tokens file
+    ifstream infileTokens("tokens.txt");
+    if (!infileTokens) {
+        cerr << "Failed to open tokens.txt\n";
         return 1;
     }
-    
-    // get tokenized version
-    string tokens;
-    getline(infile, tokens);
-    
-    ///Choose k value
-    int k = 4; /* kylie: global, input, or hard-code? */
 
-    // make hash table
-    KmerHash table
+    ///Choose k and w values
+    int k = 4; 
+    int w = 4;
 
-    /// make all of the overlapping k-mers
-    for (size_t i = 0; i < tokens.length() - k; i++) {
-        /* code */
+    ///Store all file data
+    vector<FileData> files;
+    string fileTokens;
+    int fileID = 0;
+
+    while(getline(infileTokens, fileTokens))
+    {
+        if(fileTokens.empty()) continue;
+
+        ///Read and store all data associated with a file
+        FileData file;
+
+        ///Set file ID
+        file.fileID = fileID;
+
+        ///Store all tokens for the file 
+        file.tokens = readInTokens(fileTokens);
+
+        ///Create and store hashes for all k-mers of a file
+        file.k_mers_hashes = hashKMers(file.tokens, k);
+
+        ///Find and store all fingerprints for a file
+        file.fingerprints = winnowingAlgorithm(file.k_mers_hashes, w);
+
+        ///Add file data to our tracking vector
+        files.push_back(file);
+        fileID++;
     }
-    
-    /// Hash the k-mers
-    /// store sequence of hashed
-    /// choose window size
-    /// choose minimum hash value from each window
 
-    /// calculate similarity score
+    ///Create N * N table, with N being the number of files
+    /// calculate similarity score for files a and b and store in table
+    vector<vector<Score>> similarityScores = similarityTable(files);
 
-    infile.close();
-    cout << "CMOS Project" << endl;
-    return 0;
+    ///Print out report for each file
+    printReport(files, similarityScores);
+
+    infileTokens.close();
     return 0;
 }

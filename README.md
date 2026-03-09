@@ -11,3 +11,8 @@ flex -o lex.yy.cpp cmos.l
 g++ -std=c++17 lex.yy.cpp -o scanner
 ./scanner < test.txt
 ```
+
+## Project Report
+# Tokens and Regular Expressions Identifies
+# Winnowing Implementation
+# Results of Analysis
