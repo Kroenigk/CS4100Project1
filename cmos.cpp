@@ -40,6 +40,10 @@ vector<int> readInTokens(string fileTokens)
     vector<int> tokens;
     stringstream fileLine(fileTokens);
     int token;
+    string filename;
+
+    ///consume file name
+    fileLine >> filename;
 
     while(fileLine >> token)
     {
@@ -58,10 +62,10 @@ vector<KGramHash> hashKMers(const vector<int>& tokens, int k)
     vector<KGramHash> hashes;
     const unsigned long long hashBase = 31;
 
-    ///quick sanity check to make sure tokens and k are appropiate sizes. 
-    if ((int)tokens.size() < k || k <= 0) {
-        return hashes;
-    }
+    // ///quick sanity check to make sure tokens and k are appropiate sizes. 
+    // if ((int)tokens.size() < k || k <= 0) {
+    //     return hashes;
+    // }
 
     for(int i = 0; i <= (int)tokens.size() - k; i++)
     {
@@ -86,9 +90,9 @@ vector<Fingerprint> winnowingAlgorithm(const vector<KGramHash>& hashes, int w)
     vector<Fingerprint> fingerprints;
 
     ///quick sanity check to make sure hashes and w are appropiate sizes for winnowing 
-    if ((int)hashes.size() < w || w <= 0) {
-        return fingerprints;
-    }
+    // if ((int)hashes.size() < w || w <= 0) {
+    //     return fingerprints;
+    // }
 
     /// This loop will find all the unique fingerprint among the overlapping windows
     int last_index = -1;
@@ -184,7 +188,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     int n = files.size();
 
     ///print out all ranked scores for a file in a table format into an output file
-    cout << setw(100)<< setfill('-') << "" << endl;
+    cout << setw(300)<< setfill('-') << "" << endl;
     cout << setfill(' ');
 
     ///table header
@@ -211,18 +215,19 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
         }
         cout << endl;
     }
-    cout << setw(100)<< setfill('-') << "" << endl;
+    cout << setw(300)<< setfill('-') << "" << endl;
 
 }
 
 
-int main(int argc, char const *argv[]) {
+int main() {
     /// Open tokens file
     ifstream infileTokens("tokens.txt");
     if (!infileTokens) {
         cerr << "Failed to open tokens.txt\n";
         return 1;
     }
+    cout << "Tokens.txt opening...." << endl;
 
     ///Choose k and w values
     int k = 4; 
@@ -231,8 +236,9 @@ int main(int argc, char const *argv[]) {
     ///Store all file data
     vector<FileData> files;
     string fileTokens;
-    int fileID = 0;
+    int fileID = 1;
 
+    cout << "Reading in File Data......." << endl;
     while(getline(infileTokens, fileTokens))
     {
         if(fileTokens.empty()) continue;
@@ -251,6 +257,12 @@ int main(int argc, char const *argv[]) {
 
         ///Find and store all fingerprints for a file
         file.fingerprints = winnowingAlgorithm(file.k_mers_hashes, w);
+
+        cout << "File " << file.fileID
+     << " tokens: " << file.tokens.size()
+     << ", k-gram hashes: " << file.k_mers_hashes.size()
+     << ", fingerprints: " << file.fingerprints.size()
+     << endl;
 
         ///Add file data to our tracking vector
         files.push_back(file);
