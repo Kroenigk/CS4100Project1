@@ -176,8 +176,8 @@ vector<vector<Score>> similarityTable(const vector<FileData>& files){
         for(int j = i + 1; j < n; j++)
         {
             double similarityScore = findSimilarity(files[i].fingerprints, files[j].fingerprints);
-            scores[i][j] = {i, similarityScore, j};
-            scores[j][i] = {j, similarityScore, i};
+            scores[i][j] = {files[i].fileID, similarityScore, files[j].fileID};
+            scores[j][i] = {files[j].fileID, similarityScore, files[i].fileID};
         }
     }
     return scores;
@@ -185,7 +185,9 @@ vector<vector<Score>> similarityTable(const vector<FileData>& files){
 
 void printReport(const vector<FileData>& files, const vector<vector<Score>>& similarityScores)
 {
+    int total = 0;
     int n = files.size();
+    vector<Score> notablePairs;
 
     ///print out all ranked scores for a file in a table format into an output file
     cout << setw(550)<< setfill('-') << "" << endl;
@@ -195,7 +197,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     cout << setw(10) << "";
     for(int i = 0; i < n; i++)
     {
-        cout << setw(10) << files[i].fileID;
+        cout << left << setw(10) << files[i].fileID;
     }
     cout << endl;
 
@@ -207,16 +209,46 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
 
             if( i == j )
             {
-                cout << setw(10) << "--";
+                cout << left << setw(10) << "--";
             }
             else {
-                cout << setw(10) << fixed << setprecision(2) << similarityScores[i][j].similarityScore;
+                cout << left << setw(10) << fixed << setprecision(2) << similarityScores[i][j].similarityScore;
+                total += similarityScores[i][j].similarityScore;
+                if(similarityScores[i][j].similarityScore >= 80.00){
+                    if(i < j)
+                    {
+                        notablePairs.push_back(similarityScores[i][j]);
+                    }
+                }
             }
         }
         cout << endl;
     }
-    cout << setw(550)<< setfill('-') << "" << endl;
+    cout << setw(550) << setfill('-') << "" << endl;
+    cout << endl;
 
+
+    int notableSize = notablePairs.size();
+    ///Print out notable pair with a high similarity score
+    cout << "Notable Pairs (Similarity Scores of >= 80%)" << endl;
+    cout << setw(50)<< setfill('-') << "" << endl;
+    cout << setfill(' ');
+
+    cout << left << setw(10) << "File A" << setw(12) << "File B" << setw(10) << "Similarity" << endl;
+    cout << setw(50) << setfill('-') << "" << endl;
+    cout << setfill(' ');
+
+    for (int i = 0; i < notableSize; i++) {
+        cout << setw(10) << notablePairs[i].fileID;
+        cout << setw(10) << notablePairs[i].comparisonFile;
+        cout << fixed << setprecision(2) << notablePairs[i].similarityScore << "%" << endl;
+    }
+    
+    cout << setw(50)<< setfill('-') << "" << endl;
+    cout << endl;
+
+    double avg = total / ( n * (n - 1));
+    cout << "Average similarity score: " << avg << endl;
 }
 
 
