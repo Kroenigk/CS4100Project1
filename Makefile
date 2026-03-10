@@ -1,3 +1,4 @@
+# This code is written by Kylie Roenigk and Angie Bragg
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17
 

@@ -1,4 +1,5 @@
 # CS4100Project1
+- This code is written by Kylie Roenigk and Angie Bragg
 ## Set Up
 ```bash
 sudo apt update
