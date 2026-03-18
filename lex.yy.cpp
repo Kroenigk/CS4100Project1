@@ -483,6 +483,7 @@ char *yytext;
 #line 1 "cmos.l"
 #line 2 "cmos.l"
 /* ===== C DECLARATIONS ===== */
+/// This code is written by Kylie Roenigk and Angie Bragg
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -559,9 +560,9 @@ int checkKeyword(const char* word){
     }
     return TKVARIABLE;
 }
-#line 563 "lex.yy.cpp"
+#line 564 "lex.yy.cpp"
 
-#line 565 "lex.yy.cpp"
+#line 566 "lex.yy.cpp"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -779,10 +780,10 @@ YY_DECL
 		}
 
 	{
-#line 83 "cmos.l"
+#line 84 "cmos.l"
 
 
-#line 786 "lex.yy.cpp"
+#line 787 "lex.yy.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -842,48 +843,48 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 85 "cmos.l"
+#line 86 "cmos.l"
 {   Addline(yytext);    }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 87 "cmos.l"
+#line 88 "cmos.l"
 {	/* ignore */	}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 89 "cmos.l"
+#line 90 "cmos.l"
 {	/* ignore */	}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 91 "cmos.l"
+#line 92 "cmos.l"
 {	BEGIN(COMMENT);		}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 93 "cmos.l"
+#line 94 "cmos.l"
 {	BEGIN(INITIAL);	}
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 95 "cmos.l"
+#line 96 "cmos.l"
 {	Addline(yytext);	}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 97 "cmos.l"
+#line 98 "cmos.l"
 {	/* ignore */	}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 99 "cmos.l"
+#line 100 "cmos.l"
 {	/* ignore */		}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 102 "cmos.l"
+#line 103 "cmos.l"
 {	
 									fprintf(out, "%d ", TKPOINTER);
 									return TKPOINTER;	
@@ -891,12 +892,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 107 "cmos.l"
+#line 108 "cmos.l"
 {	fprintf(out, "%d ", TKOPERATOR); return TKOPERATOR;	}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 109 "cmos.l"
+#line 110 "cmos.l"
 {	
 							fprintf(out, "%d ", TKOPERATOR);
 							return TKOPERATOR;	
@@ -904,7 +905,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 114 "cmos.l"
+#line 115 "cmos.l"
 {	
 							fprintf(out, "%d ", TKPUNC);
 							return TKPUNC;		
@@ -912,7 +913,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 119 "cmos.l"
+#line 120 "cmos.l"
 {	
 							int token = checkKeyword(yytext);
 							fprintf(out, "%d ", token);
@@ -922,7 +923,7 @@ YY_RULE_SETUP
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 125 "cmos.l"
+#line 126 "cmos.l"
 { 
 								fprintf(out, "%d ", TKSTRING);
 								return TKSTRING; 
@@ -930,7 +931,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 130 "cmos.l"
+#line 131 "cmos.l"
 { 
 								fprintf(out, "%d ", TKNUM);
 								return TKNUM; 
@@ -939,7 +940,7 @@ YY_RULE_SETUP
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 135 "cmos.l"
+#line 136 "cmos.l"
 {	
 								fprintf(out, "%d ", TKCHAR);
 								return TKCHAR; 		
@@ -947,17 +948,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 140 "cmos.l"
+#line 141 "cmos.l"
 {		/* ignore */ 	}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 142 "cmos.l"
+#line 143 "cmos.l"
 {	/* ignore stray symbols in bad source code or comments */		}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 144 "cmos.l"
+#line 145 "cmos.l"
 {   
     				fprintf(out, "%d ", TKUNMATCHED);
     				return TKUNMATCHED;   
@@ -965,10 +966,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 149 "cmos.l"
+#line 150 "cmos.l"
 ECHO;
 	YY_BREAK
-#line 972 "lex.yy.cpp"
+#line 973 "lex.yy.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 	yyterminate();
@@ -1974,7 +1975,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 149 "cmos.l"
+#line 150 "cmos.l"
 
 int yywrap(void){
 	return 1;

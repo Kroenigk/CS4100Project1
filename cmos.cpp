@@ -33,11 +33,13 @@ struct Score {
     double similarityScore;
     int comparisonFile;
 };
-
-/// @brief This function will read in all of the tokens for a text file and place them in a vector for future use
-/// @param fileTokens This string is all of the tokens from a file on one line from tokens.txt
-/// @param fileID Currently this is an int that represents the file from the directory since file names may repeat
-/// @return A vector of the tokens from a file
+/**
+ * @brief read in all of the tokens for a text file and place them in a vector for future use
+ * 
+ * @param fileTokens - this string is all of the tokens from a file on one line from tokens.txt
+ * @param fileID - currently this is an int that represents the file from the directory since file names may repeat
+ * @return vector<int> of the tokens from a file
+ */
 vector<int> readInTokens(string fileTokens)
 {
     vector<int> tokens;
@@ -45,7 +47,7 @@ vector<int> readInTokens(string fileTokens)
     int token;
     string filename;
 
-    ///consume file name
+    /// Consume file name
     fileLine >> filename;
 
     while(fileLine >> token)
@@ -56,24 +58,23 @@ vector<int> readInTokens(string fileTokens)
     return tokens;
 }
 
-/// @brief Using a vector of tokens, it will hash all of the tokens into one k-mer hash 
-/// @param tokens Vector of int file tokens
-/// @param k Size of the overlapping k-mers, currently 4
-/// @return A vector of hashes for the k-mers
+/**
+ * @brief Using a vector of tokens, it will hash all of the tokens into one k-mer hash 
+ * 
+ * @param tokens - vector of int file tokens
+ * @param k - size of the overlapping k-mers, currently 4
+ * 
+ * @return vector<KGramHash> hashes for the k-mers
+ */
 vector<KGramHash> hashKMers(const vector<int>& tokens, int k)
 {
     vector<KGramHash> hashes;
     const unsigned long long hashBase = 31;
 
-    // ///quick sanity check to make sure tokens and k are appropiate sizes. 
-    // if ((int)tokens.size() < k || k <= 0) {
-    //     return hashes;
-    // }
-
     for(int i = 0; i <= (int)tokens.size() - k; i++)
     {
         unsigned long long hash = 0;
-        ///This will hash the k-mers
+        /// This will hash the k-mers
         for(int j = 0; j < k; ++j)
         {
             hash = hashBase * hash + tokens[i+j];
@@ -84,37 +85,36 @@ vector<KGramHash> hashKMers(const vector<int>& tokens, int k)
     return hashes;
 }
 
-/// @brief This function will perform the winnowing algorithm on the k-mer hashes
-/// @param hashes This contains all of the hashes for the tokens of a certain file
-/// @param w This is the set window size, currently it is set at 4
-/// @return Unsing the winnowing algorthim it will return a vector of the unique fingerprints for the overlapping windows of a file
+/**
+ * @brief perform the winnowing algorithm on the k-mer hashes
+ * 
+ * @param hashes - all of the hashes for the tokens of a certain file
+ * @param w - set window size
+ * 
+ * @return vector<Fingerprint> - the unique fingerprints for the overlapping windows of a file
+ */
 vector<Fingerprint> winnowingAlgorithm(const vector<KGramHash>& hashes, int w)
 {
     vector<Fingerprint> fingerprints;
-
-    ///quick sanity check to make sure hashes and w are appropiate sizes for winnowing 
-    // if ((int)hashes.size() < w || w <= 0) {
-    //     return fingerprints;
-    // }
 
     /// This loop will find all the unique fingerprint among the overlapping windows
     int last_index = -1;
     for(int i = 0; i <= (int)hashes.size() - w; i++)
     {
-        ///Track the smallest hash found and its position
+        /// Track the smallest hash found and its position
         unsigned long long smallest = hashes[i].hash;
         int smallest_index = i;
-        ///this will find the smallest has in a window
+        /// This will find the smallest has in a window
         for(int j = 0; j < w; ++j)
         {
-            ///This will check to see if a hash is smaller or equal to the current smallest which may be the starting index
+            /// This will check to see if a hash is smaller or equal to the current smallest which may be the starting index
             if(hashes[i + j].hash < smallest || (hashes[i + j].hash == smallest && (i + j) > smallest_index))
             {
                 smallest = hashes[i+j].hash;
                 smallest_index = i + j;
             }
         }
-        ///if the new fingerprint is not the same as the last add it
+        /// If the new fingerprint is not the same as the last add it
         if(smallest_index != last_index)
         {
             fingerprints.push_back({smallest, hashes[smallest_index].position});
@@ -124,11 +124,14 @@ vector<Fingerprint> winnowingAlgorithm(const vector<KGramHash>& hashes, int w)
 
     return fingerprints;
 }
-
-/// @brief This function will find the similarity score between two file fingerprints
-/// @param a File a's vectors of fingerprints
-/// @param b File b's vectors of fingerprints
-/// @return A double representing the percent of similarity 
+ 
+/**
+ * @brief find the similarity score between two file fingerprints
+ * 
+ * @param a - file a's vectors of fingerprints
+ * @param b - file b's vectors of fingerprints
+ * @return double - the percent of similarity 
+ */
 double findSimilarity(const vector<Fingerprint>& a, const vector<Fingerprint>& b)
 {
     unordered_set<unsigned long long> setA;
@@ -145,7 +148,7 @@ double findSimilarity(const vector<Fingerprint>& a, const vector<Fingerprint>& b
         setB.insert(b[i].minimum_hash);
     }
 
-    ///Find the shared fingerprints - Intersection of the two sets
+    /// Find the shared fingerprints - Intersection of the two sets
     for(const auto& hash : setA){
         if(setB.count(hash))
         {
@@ -153,7 +156,7 @@ double findSimilarity(const vector<Fingerprint>& a, const vector<Fingerprint>& b
         }
     }
 
-    ///find total unique fingerprints - Union of the two sets
+    /// Find total unique fingerprints - Union of the two sets
     int union_count = setA.size() + setB.size() - shared_count;
     if(union_count == 0)
     {
@@ -168,7 +171,7 @@ vector<vector<Score>> similarityTable(const vector<FileData>& files){
     int n = files.size();
     vector<vector<Score>> scores(n, vector<Score>(n));
 
-    ///initialize score values
+    /// Initialize score values
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             scores[i][j] = {i, -1.0, j};
@@ -192,11 +195,11 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     int n = files.size();
     vector<Score> notablePairs;
 
-    ///print out all ranked scores for a file in a table format into an output file
+    /// Print out all ranked scores for a file in a table format into an output file
     cout << setw(550)<< setfill('-') << "" << endl;
     cout << setfill(' ');
 
-    ///table header
+    /// Table header
     cout << setw(10) << "";
     for(int i = 0; i < n; i++)
     {
@@ -204,7 +207,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     }
     cout << endl;
 
-    ///print out each Similarity scores for the files
+    /// Print out each Similarity scores for the files
     for(int i = 0; i < n; i++)
     {
         cout << setw(10) << files[i].fileID;
@@ -212,7 +215,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
 
             if( i == j )
             {
-                cout << left << setw(10) << "--";
+                cout << left << setw(10) << "-----";
             }
             else {
                 cout << left << setw(10) << fixed << setprecision(2) << similarityScores[i][j].similarityScore;
@@ -232,7 +235,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
 
 
     int notableSize = notablePairs.size();
-    ///Print out notable pair with a high similarity score
+    /// Print out notable pair with a high similarity score
     cout << "Notable Pairs (Similarity Scores of >= 80%)" << endl;
     cout << setw(50)<< setfill('-') << "" << endl;
     cout << setfill(' ');
@@ -264,11 +267,11 @@ int main() {
     }
     cout << "Tokens.txt opening...." << endl;
 
-    ///Choose k and w values
+    /// Choose k and w values
     int k = 4; 
     int w = 4;
 
-    ///Store all file data
+    /// Store all file data
     vector<FileData> files;
     string fileTokens;
     int fileID = 1;
@@ -278,31 +281,31 @@ int main() {
     {
         if(fileTokens.empty()) continue;
 
-        ///Read and store all data associated with a file
+        /// Read and store all data associated with a file
         FileData file;
 
-        ///Set file ID
+        /// Set file ID
         file.fileID = fileID;
 
-        ///Store all tokens for the file 
+        /// Store all tokens for the file 
         file.tokens = readInTokens(fileTokens);
 
-        ///Create and store hashes for all k-mers of a file
+        /// Create and store hashes for all k-mers of a file
         file.k_mers_hashes = hashKMers(file.tokens, k);
 
-        ///Find and store all fingerprints for a file
+        /// Find and store all fingerprints for a file
         file.fingerprints = winnowingAlgorithm(file.k_mers_hashes, w);
 
-        ///Add file data to our tracking vector
+        /// Add file data to our tracking vector
         files.push_back(file);
         fileID++;
     }
 
-    ///Create N * N table, with N being the number of files
-    /// calculate similarity score for files a and b and store in table
+    /// Create N * N table, with N being the number of files
+    /// Calculate similarity score for files a and b and store in table
     vector<vector<Score>> similarityScores = similarityTable(files);
 
-    ///Print out report for each file
+    /// Print out report for each file
     printReport(files, similarityScores);
 
     infileTokens.close();
