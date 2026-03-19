@@ -11,6 +11,8 @@
 
 using namespace std;
 
+double FILTER = 80.00;
+
 struct KGramHash {
     unsigned long long hash;
     int position;
@@ -220,7 +222,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
             else {
                 cout << left << setw(10) << fixed << setprecision(2) << similarityScores[i][j].similarityScore;
                 total += similarityScores[i][j].similarityScore;
-                if(similarityScores[i][j].similarityScore >= 80.00){
+                if(similarityScores[i][j].similarityScore >= FILTER){
                     if(i < j)
                     {
                         notablePairs.push_back(similarityScores[i][j]);
@@ -236,7 +238,7 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
 
     int notableSize = notablePairs.size();
     /// Print out notable pair with a high similarity score
-    cout << "Notable Pairs (Similarity Scores of >= 80%)" << endl;
+    cout << "Notable Pairs (Similarity Scores of >= " << FILTER << "%)" << endl;
     cout << setw(50)<< setfill('-') << "" << endl;
     cout << setfill(' ');
 
