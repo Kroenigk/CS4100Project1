@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_set>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 
@@ -235,10 +236,9 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     cout << setw(550) << setfill('-') << "" << endl;
     cout << endl;
 
-
     int notableSize = notablePairs.size();
     /// Print out notable pair with a high similarity score
-    cout << "Notable Pairs (Similarity Scores of >= " << FILTER << "%)" << endl;
+    cout << endl << "Notable Pairs (Similarity Scores of >= " << FILTER << "%)" << endl;
     cout << setw(50)<< setfill('-') << "" << endl;
     cout << setfill(' ');
 
@@ -256,7 +256,28 @@ void printReport(const vector<FileData>& files, const vector<vector<Score>>& sim
     cout << endl;
 
     double avg = total / ( n * (n - 1));
-    cout << "Average similarity score: " << avg << endl;
+    cout << "Average similarity score: " << avg << endl << endl;
+
+    vector<Score> flatTable;
+
+    // flatten table
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            flatTable.push_back(similarityScores[i][j]);
+        }
+    }
+    // sort flattened table by similarity score
+    sort(flatTable.begin(), flatTable.end(), [](const Score& a, const Score& b) {return a.similarityScore > b.similarityScore;});
+
+    cout << "All pairs from greatest to least similarity" << endl;
+    cout << setw(50) << setfill('-') << "" << endl;
+    cout << setfill(' ');
+    // go through vector & print all pairs
+    for (const auto& pair : flatTable) {
+        cout << "File " << pair.fileID << " vs File " << pair.comparisonFile << ": " << pair.similarityScore << '%' << endl;
+    }
+    cout << setw(50)<< setfill('-') << "" << endl;
+    cout << endl;
 }
 
 
